@@ -18,7 +18,7 @@ filenames = [
     # "data/mt_bench/model_answer/dolly-v2-12b.jsonl",
     # "data/mt_bench/model_answer/falcon-40b-instruct.jsonl",
     # "data/mt_bench/model_answer/fastchat-t5-3b.jsonl",
-    # "data/mt_bench/model_answer/gpt-3.5-turbo.jsonl",
+    "data/mt_bench/model_answer/gpt-3.5-turbo.jsonl",
     # "data/mt_bench/model_answer/gpt-4.jsonl",
     # "data/mt_bench/model_answer/gpt4all-13b-snoozy.jsonl",
     # "data/mt_bench/model_answer/guanaco-33b.jsonl",

@@ -89,6 +89,7 @@ def display_result_pairwise(args):
     )
     # print(df.sort_values(by="win_rate", ascending=False))
     # print(df.sort_values(by="loss_rate", ascending=True))
+    pd.set_option('display.max_colwidth', None)
     print(df.sort_values(by="win_rate_adjusted", ascending=False))
 
 
