@@ -3,6 +3,9 @@
 Usage:
 python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 """
+import sys
+sys.path.append("/home/g/ft-eval/FastChat")
+
 import argparse
 import json
 import os
@@ -28,11 +31,16 @@ def run_eval(
     num_choices,
     num_gpus_per_model,
     num_gpus_total,
-    max_gpu_memory,
+    max_gpu_memory
 ):
     questions = load_questions(question_file, question_begin, question_end)
     # random shuffle the questions to balance the loading
     random.shuffle(questions)
+    print("Questions loaded")
+
+    if os.path.exists(answer_file):
+        print(f"output file {answer_file} already exists! Skipping")
+        quit()
 
     # Split the question file into `num_gpus` files
     assert num_gpus_total % num_gpus_per_model == 0
@@ -57,7 +65,7 @@ def run_eval(
                 max_new_token,
                 num_choices,
                 num_gpus_per_model,
-                max_gpu_memory,
+                max_gpu_memory
             )
         )
 
@@ -85,8 +93,12 @@ def get_model_answers(
         cpu_offloading=False,
         debug=False,
     )
+    print("Model loaded")
 
+    f=0
     for question in tqdm(questions):
+        f+=1
+        print(f"Question #{f}")
         if question["category"] in temperature_config:
             temperature = temperature_config[question["category"]]
         else:
@@ -94,14 +106,17 @@ def get_model_answers(
 
         choices = []
         for i in range(num_choices):
+            print(f"Question #{f}, choice #{i}")
             torch.manual_seed(i)
             conv = get_conversation_template(model_id)
             turns = []
             for j in range(len(question["turns"])):
+                print(f"Question #{f}, choice #{i}, turn #{j}")
                 qs = question["turns"][j]
                 conv.append_message(conv.roles[0], qs)
                 conv.append_message(conv.roles[1], None)
                 prompt = conv.get_prompt()
+                # print(f"--Prompt: {prompt}")
                 input_ids = tokenizer([prompt]).input_ids
 
                 if temperature < 1e-4:
@@ -139,6 +154,7 @@ def get_model_answers(
                         output = output.replace("Assistant:", "", 1).strip()
                 except RuntimeError as e:
                     print("ERROR question ID: ", question["question_id"])
+                    print(e)
                     output = "ERROR"
 
                 turns.append(output)
@@ -249,7 +265,7 @@ if __name__ == "__main__":
         args.num_choices,
         args.num_gpus_per_model,
         args.num_gpus_total,
-        args.max_gpu_memory,
+        args.max_gpu_memory
     )
 
     reorg_answer_file(answer_file)

@@ -2,6 +2,9 @@
 Usage:
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call] --mode [single|pairwise-baseline|pairwise-all]
 """
+import sys
+sys.path.append("/home/g/ft-eval/FastChat")
+
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
