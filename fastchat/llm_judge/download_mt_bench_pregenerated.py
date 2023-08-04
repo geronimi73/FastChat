@@ -10,7 +10,7 @@ import os
 from fastchat.utils import run_cmd
 
 filenames = [
-    # "data/mt_bench/model_answer/alpaca-13b.jsonl",
+    "data/mt_bench/model_answer/alpaca-13b.jsonl",
     # "data/mt_bench/model_answer/baize-v2-13b.jsonl",
     # "data/mt_bench/model_answer/chatglm-6b.jsonl",
     # "data/mt_bench/model_answer/claude-instant-v1.jsonl",
@@ -19,7 +19,7 @@ filenames = [
     # "data/mt_bench/model_answer/falcon-40b-instruct.jsonl",
     # "data/mt_bench/model_answer/fastchat-t5-3b.jsonl",
     # "data/mt_bench/model_answer/gpt-3.5-turbo.jsonl",
-    "data/mt_bench/model_answer/gpt-4.jsonl",
+    # "data/mt_bench/model_answer/gpt-4.jsonl",
     # "data/mt_bench/model_answer/gpt4all-13b-snoozy.jsonl",
     # "data/mt_bench/model_answer/guanaco-33b.jsonl",
     # "data/mt_bench/model_answer/guanaco-65b.jsonl",
