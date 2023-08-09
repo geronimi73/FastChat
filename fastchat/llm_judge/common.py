@@ -280,14 +280,33 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
         raise ValueError(f"Invalid judge model name: {model}")
 
     if judge.prompt_template["output_format"] == "[[A]]":
-        if "[[A]]" in judgment:
+        if "[[A]]" in judgment and "[[B]]" in judgment:
+            winner = "error"
+        elif "[[A]]" in judgment:
             winner = "A"
         elif "[[B]]" in judgment:
             winner = "B"
         elif "[[C]]" in judgment:
             winner = "tie"
+        elif "[[Tie]]" in judgment:
+            winner = "tie"
         else:
-            winner = "error"
+            if "[[Assistant A]]" in judgment and "[[Assistant B]]" in judgment:
+                winner = "error"
+            elif "[[Assistant A]]" in judgment:
+                winner = "A"
+            elif "[[Assistant B]]" in judgment:
+                winner = "B"
+            else:
+                winner = "error"
+        # if "[[A]]" in judgment:
+        #     winner = "A"
+        # elif "[[B]]" in judgment:
+        #     winner = "B"
+        # elif "[[C]]" in judgment:
+        #     winner = "tie"
+        # else:
+        #     winner = "error"
     elif judge.prompt_template["output_format"] == "[[rating_a,rating_b]]":
         match = re.search(two_score_pattern, judgment)
         if not match:
@@ -470,7 +489,7 @@ def chat_compeletion_tgwApi(model, conv, temperature, max_tokens):
 
                 'seed': -1,
                 'add_bos_token': True,
-                'truncation_length': 2048,
+                'truncation_length': 4096,
                 'ban_eos_token': False,
                 'skip_special_tokens': True,
                 'stopping_strings': []
