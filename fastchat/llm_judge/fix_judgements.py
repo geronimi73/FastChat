@@ -2,7 +2,7 @@
 import os
 import json
 import random
-
+from copy import deepcopy
 
 def read_jsonl(file_path):
     file_path = os.path.expanduser(file_path)
@@ -18,38 +18,81 @@ def write_jsonl(file_path, data):
         for o in data:
             f.write(json.dumps(o) + "\n")
 
-def read_and_fix_judgements(input_fn):
-    judgements=read_jsonl(input_fn)
+def write_pretty_json(file_path, data):
+    with open(file_path, "w") as write_file:
+        json.dump(data, write_file, indent=4)
+
+def checkErrors(judgements):
     empty_count=0
-    error_dist={}
-    error_judgements=[]
-    for c in [0,1,2]:
-        error_dist[c]=0
-    num_changes=0
-    num_total=0
+
+    stats= {
+        'total': len(judgements), 
+        'one error': 0, 
+        'two errors': 0, 
+        'empty judgements': 0,
+        'error judgements': []
+    }
 
     for judgement in judgements:
+        if judgement["g1_winner"] == "error" and judgement["g2_winner"] == "error":
+            stats["two errors"]+=1
+            stats["error judgements"].append({
+                    'question_id': judgement['question_id'],
+                    'model': judgement['model_1'],
+                    'text': judgement['g1_judgment'],
+                })
+            stats["error judgements"].append({
+                    'question_id': judgement['question_id'],
+                    'model': judgement['model_2'],
+                    'text': judgement['g2_judgment'],
+                })
+        elif judgement["g1_winner"] == "error" or judgement["g2_winner"] == "error":
+            stats["one error"]+=1
+            if judgement["g1_winner"] == "error":
+                stats["error judgements"].append({
+                        'question_id': judgement['question_id'],
+                        'model': judgement['model_1'],
+                        'text': judgement['g1_judgment'],
+                    })
+            else:
+                stats["error judgements"].append({
+                        'question_id': judgement['question_id'],
+                        'model': judgement['model_2'],
+                        'text': judgement['g2_judgment'],
+                    })
+        if judgement["g1_judgment"] == "" or judgement["g2_judgment"] == "":
+            stats["empty judgements'"]+=1
+    return stats
+
+def parse_winner(judgement_text):
+    if "[[A]]" in judgement_text and "[[B]]" in judgement_text:
+        if (judgement_text.find("[[A]]")<judgement_text.find("[[B]]")):
+            winner = "A"
+        else:
+            winner = "B"
+    elif "[[A]]" in judgement_text:
+        winner = "A"
+    elif "[[B]]" in judgement_text:
+        winner = "B"
+    elif "[[C]]" in judgement_text:
+        winner = "tie"
+    elif "[[tie]]" in judgement_text.lower():
+        winner = "tie"
+    else:
+        if "[[Assistant A]]" in judgement_text:
+            winner = "A"
+        elif "[[Assistant B]]" in judgement_text:
+            winner = "B"
+        else:
+            winner = "error"
+    return winner
+
+def fix_judgements(judgements):
+    for judgement in judgements:
         for k in ["g1_judgment","g2_judgment"]:
-            num_total+=1
             judgement_text=judgement[k]
 
-            if "[[A]]" in judgement_text and "[[B]]" in judgement_text:
-                winner = "error"
-            elif "[[A]]" in judgement_text:
-                winner = "A"
-            elif "[[B]]" in judgement_text:
-                winner = "B"
-            elif "[[C]]" in judgement_text:
-                winner = "tie"
-            elif "[[Tie]]" in judgement_text:
-                winner = "tie"
-            else:
-                if "[[Assistant A]]" in judgement_text:
-                    winner = "A"
-                elif "[[Assistant B]]" in judgement_text:
-                    winner = "B"
-                else:
-                    winner = "error"
+            winner = parse_winner(judgement_text)
 
             if k == "g1_judgment":
                 if winner =="A" or winner =="B":
@@ -58,39 +101,40 @@ def read_and_fix_judgements(input_fn):
                     winner_mapped=winner
 
                 if judgement["g1_winner"] != winner_mapped:
-                    # print(f"\nold: " + judgement["g1_winner"] + f", new: {winner_mapped}")
-                    # print(f"## {judgement_text}")
-                    # print(judgement)
                     judgement["g1_winner"]=winner_mapped
-                    num_changes+=1
             else:
                 if winner =="A" or winner =="B":
                     winner_mapped="model_2" if winner=="A" else "model_1"
                 else:                    
                     winner_mapped=winner
                 if judgement["g2_winner"] != winner_mapped:
-                    # print(f"\nold: " + judgement["g2_winner"] + f", new: {winner_mapped}")
-                    # print(f"## {judgement_text}")
-                    # print(judgement)
                     judgement["g2_winner"]=winner_mapped
-                    num_changes+=1
+    return judgements
 
-    return num_total, num_changes,judgements
-
-jfiles=[
-    "data/mt_bench/model_judgment/gpt-4_pair.jsonl",
-    "data/mt_bench/model_judgment/text-generation-webui-api_pair_temp-0.1-exllama.jsonl",
-    "data/mt_bench/model_judgment/text-generation-webui-api_pair_temp-0.1.jsonl",
-    "data/mt_bench/model_judgment/text-generation-webui-api_pair_temp-0.7.jsonl",
-    "data/mt_bench/model_judgment/text-generation-webui-api_pair.jsonl",
+files= [
+    "text-generation-webui-api_pair.jsonl",
     ]
 
+for file_path in files:
+    fixed=False
+    print(file_path)
+    judgments=read_jsonl(file_path)
+    for j in [judgments, fix_judgements(deepcopy(judgments))]:
+        print("before" if not fixed else "after")
+        stats=checkErrors(j)
+        for key in stats:
+            if key=="error judgements":
+                if fixed:
+                    out_fn=file_path.split(".")[0]+"_errors.json"
+                    write_pretty_json(out_fn, stats[key])
+                    print(f" Wrote remaining error judgements to {out_fn}")
+            else:
+                print(f" {key}: {json.dumps(stats[key],indent=2)}")
+        if fixed:
+            out_fn=file_path.split(".")[0]+"_fixed.jsonl"
+            write_jsonl(out_fn, j)
+            print(f" Wrote fixed judgements to {out_fn}")
 
-for input_fn in jfiles:
-    # print(f"------ {input_fn}")
-    num_total,num_changes,judgements=read_and_fix_judgements(input_fn)
-
-    print(f"{os.path.basename(input_fn)}: {num_changes} changes, {num_total} total")
-
-    write_jsonl(os.path.splitext(input_fn)[0]+"_fixed.jsonl", judgements)
+        fixed=True
+        print("")
 
