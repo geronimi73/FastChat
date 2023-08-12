@@ -273,7 +273,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
         )
     elif model in ["text-generation-webui-api"]:
         conv.set_system_message(system_prompt)
-        judgment = chat_compeletion_tgwApi(
+        judgment, prompt = chat_compeletion_tgwApi(
             model, conv, temperature=0, max_tokens=2048
         )
     else:
@@ -326,7 +326,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
             f"invalid output format: {judge.prompt_template['output_format']}"
         )
 
-    return winner, user_prompt, judgment
+    return winner, user_prompt, judgment, prompt
 
 
 def play_a_match_pair(match: MatchPair, output_file: str):
@@ -342,10 +342,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     )
 
     if judge.prompt_template["type"] == "pairwise":
-        g1_winner, g1_user_prompt, g1_judgment = run_judge_pair(
+        g1_winner, g1_user_prompt, g1_judgment, prompt1 = run_judge_pair(
             question, answer_1, answer_2, judge, ref_answer, multi_turn=multi_turn
         )
-        g2_winner, g2_user_prompt, g2_judgment = run_judge_pair(
+        g2_winner, g2_user_prompt, g2_judgment, prompt2 = run_judge_pair(
             question, answer_2, answer_1, judge, ref_answer, multi_turn=multi_turn
         )
 
@@ -369,6 +369,8 @@ def play_a_match_pair(match: MatchPair, output_file: str):
             "g2_judgment": g2_judgment,
             "turn": turn,
             "tstamp": time.time(),
+            "orig_prompt1": prompt1,
+            "orig_prompt2": prompt2
         }
 
         print(
@@ -447,7 +449,7 @@ def chat_compeletion_tgwApi(model, conv, temperature, max_tokens):
                 # 'history': [],
                 'mode': 'instruct',  # Valid options: 'chat', 'chat-instruct', 'instruct'
                 'character': 'Example',
-                'instruction_template': 'OrcaHashes',  # Will get autodetected if unset
+                'instruction_template': 'Orca Mini',  # Will get autodetected if unset
                 # 'your_name': 'You',
                 # 'name1': 'name of user', # Optional
                 # 'name2': 'name of character', # Optional
@@ -522,7 +524,7 @@ def chat_compeletion_tgwApi(model, conv, temperature, max_tokens):
             print("Exception in chat_compeletion_tgwApi:")
             print(e)
             time.sleep(API_RETRY_SLEEP)
-    return output
+    return output, prompt
 
 def chat_compeletion_openai(model, conv, temperature, max_tokens):
     output = API_ERROR_OUTPUT
