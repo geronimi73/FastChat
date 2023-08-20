@@ -1,1 +1,0 @@
-python gen_model_answer.py --model-path /home/g/models/llama-2-7b-guanaco --model-id llama-2-7b 
