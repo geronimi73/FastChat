@@ -64,8 +64,6 @@ python3 show_result.py --mode pairwise-all --input-file data/mt_bench/model_judg
 
 # Show results for Llama 2 (upstage_Llama-2-70b-instruct-v2):
 python3 show_result.py --mode pairwise-all --input-file data/mt_bench/model_judgment/llama2_pair.jsonl
-
-
 ```
 
 ## Figure 2: Judgment quality
@@ -90,12 +88,11 @@ python3 show_result.py --mode pairwise-baseline --input-file data/mt_bench/model
 
 ## Llama 2 (upstage_Llama-2-70b-instruct-v2):
 python3 show_result.py --exclude-ties-and-errors --mode pairwise-baseline --judge-model upstage_Llama-2-70b-instruct-v2 --input-file data/mt_bench/model_judgment/guanaco_llama2_pair.jsonl
-
 ```
 
 ## Run judgements
 
-- Note: everything that follows below is only needed if you want to rerun the judgments using another judge or other models' answers; the judgment data to produce the figures are already included in this fork
+- ***Note***: everything that follows below is only needed if you want to rerun the judgments using another judge or other models' answers; the judgment data to produce the figures are already included in this fork
 
 ### Setup FastChat
 
@@ -128,8 +125,6 @@ llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3000 \
 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3500"
 
 python3 gen_judgment.py --mode pairwise-baseline --model-list alpaca-13b gpt-4 --parallel 4
-
-
 ```
 
 #### Guanaco analysis (Figure 3)
@@ -170,9 +165,6 @@ context: \"### System:\nYou are an AI assistant that follows instruction extreme
 
 # Start oobabooga/text-generation-webui, load the judge model upstage_Llama-2-70b-instruct-v2 
 python3 server.py --model Upstage-Llama-2-70B-instruct-v2-GPTQ --public-api --api --no_inject_fused_attention 
-
-
-
 ```
 
 ### Generate judgments
@@ -183,10 +175,9 @@ python3 server.py --model Upstage-Llama-2-70B-instruct-v2-GPTQ --public-api --ap
 models="gpt-4 vicuna-13b-v1.2 claude-v1 llama-13b gpt-3.5-turbo alpaca-13b"
 
 python3 gen_judgment.py --mode pairwise-baseline --model-list $models --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2
-
 ```
 
-#### Guanaco analysis (Figure 3) 
+#### Guanaco analysis (Figure 3)
 
 ```bash
 models="alpaca-13b \
@@ -200,10 +191,6 @@ llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3000 \
 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3500"
 
 python3 gen_judgment.py --mode pairwise-baseline --model-list $models --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2
-
-
 ```
 
 ### 
-
-
