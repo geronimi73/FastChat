@@ -186,7 +186,7 @@ python3 gen_judgment.py --mode pairwise-baseline --model-list $models --parallel
 
 ```
 
-#### Guanaco analysis (Figure 3)
+#### Guanaco analysis (Figure 3) 
 
 ```bash
 models="alpaca-13b \
