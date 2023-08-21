@@ -6,6 +6,7 @@ import argparse
 import pandas as pd
 
 
+
 def display_result_single(args):
     if args.input_file is None:
         input_file = (
@@ -61,7 +62,14 @@ def display_result_pairwise(args):
         if args.baseline_model is not None:
             if args.baseline_model not in [row["model_1"], row["model_2"]]:
                 continue
-        if row["g1_winner"] == "tie" or row["g1_winner"] != row["g2_winner"]:
+
+        if args.exclude_ties_and_errors and (row["g1_winner"] == "tie" or row["g2_winner"] == "tie"):
+            continue
+        elif args.exclude_ties_and_errors and (row["g1_winner"] == "error" or row["g2_winner"] == "error"):
+            continue
+        elif args.exclude_ties_and_errors and (row["g1_winner"] != row["g2_winner"]):
+            continue
+        elif row["g1_winner"] == "tie" or row["g1_winner"] != row["g2_winner"]:
             list_res.append({"model": row["model_1"], "win": 0, "loss": 0, "tie": 1})
             list_res.append({"model": row["model_2"], "win": 0, "loss": 0, "tie": 1})
         else:
@@ -98,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--bench-name", type=str, default="mt_bench")
     parser.add_argument("--input-file", type=str)
     parser.add_argument("--judge-model", type=str, default="gpt-4")
+    parser.add_argument("--exclude-ties-and-errors", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
         "--model-list",
