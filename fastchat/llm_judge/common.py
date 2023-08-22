@@ -227,8 +227,37 @@ def play_a_match_single(match: MatchPair, output_file: str):
 
     return result
 
+def parse_winner(judgement_text):
+    look_for=[]
+    look_for.append([ "[[A]]", "[[B]]", ["[[C]]", "[[Tie]]", "[[tie]]", "[[TIE]]" ], False ])
+    look_for.append([ "[[Assistant A]]", "[[Assistant B]]", [], False ])
+    look_for.append([ "[Assistant A]", "[Assistant B]", [], False ])
+    look_for.append([ "[A]", "[B]", ["[C]"], False ])
+    look_for.append([ "A", "B", [], True ])
 
-def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=False):
+    for callsign_modelA, callsign_modelB, callsign_ties, exact_match_only in look_for:
+        if exact_match_only:
+            if judgement_text==callsign_modelA:
+                return "A"
+            elif judgement_text==callsign_modelB:
+                return "B"
+        else:
+            if callsign_modelA in judgement_text and callsign_modelB in judgement_text:
+                if (judgement_text.find(callsign_modelA)<judgement_text.find(callsign_modelB)):
+                    return "A"
+                else:
+                    return "B"
+            elif callsign_modelA in judgement_text:
+                return "A"
+            elif callsign_modelB in judgement_text:
+                return "B"
+            else:
+                for callsign_tie in callsign_ties:
+                    if callsign_tie in judgement_text:
+                        return "tie"
+    return "error"
+
+def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=False, use_api=False):
     kwargs = {}
     model = judge.model_name
     if ref_answer is not None:
@@ -271,42 +300,17 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
         judgment = chat_compeletion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
-    elif model in ["text-generation-webui-api"]:
-        conv.set_system_message(system_prompt)
-        judgment, prompt = chat_compeletion_tgwApi(
-            model, conv, temperature=0, max_tokens=2048
-        )
     else:
-        raise ValueError(f"Invalid judge model name: {model}")
+        if use_api:
+            conv.set_system_message(system_prompt)
+            judgment, prompt = chat_compeletion_tgwApi(
+                model, conv, temperature=0, max_tokens=2048
+            )
+        else:
+            raise ValueError(f"Invalid judge model name: {model}")
 
     if judge.prompt_template["output_format"] == "[[A]]":
-        if "[[A]]" in judgment and "[[B]]" in judgment:
-            winner = "error"
-        elif "[[A]]" in judgment:
-            winner = "A"
-        elif "[[B]]" in judgment:
-            winner = "B"
-        elif "[[C]]" in judgment:
-            winner = "tie"
-        elif "[[Tie]]" in judgment:
-            winner = "tie"
-        else:
-            if "[[Assistant A]]" in judgment and "[[Assistant B]]" in judgment:
-                winner = "error"
-            elif "[[Assistant A]]" in judgment:
-                winner = "A"
-            elif "[[Assistant B]]" in judgment:
-                winner = "B"
-            else:
-                winner = "error"
-        # if "[[A]]" in judgment:
-        #     winner = "A"
-        # elif "[[B]]" in judgment:
-        #     winner = "B"
-        # elif "[[C]]" in judgment:
-        #     winner = "tie"
-        # else:
-        #     winner = "error"
+        winner = parse_winner(judgment)
     elif judge.prompt_template["output_format"] == "[[rating_a,rating_b]]":
         match = re.search(two_score_pattern, judgment)
         if not match:
@@ -329,7 +333,7 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
     return winner, user_prompt, judgment, prompt
 
 
-def play_a_match_pair(match: MatchPair, output_file: str):
+def play_a_match_pair(match: MatchPair, output_file: str, use_api: bool):
     question, model_1, model_2, answer_1, answer_2, judge, ref_answer, multi_turn = (
         match.question,
         match.model_1,
@@ -343,10 +347,10 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
     if judge.prompt_template["type"] == "pairwise":
         g1_winner, g1_user_prompt, g1_judgment, prompt1 = run_judge_pair(
-            question, answer_1, answer_2, judge, ref_answer, multi_turn=multi_turn
+            question, answer_1, answer_2, judge, ref_answer, multi_turn=multi_turn, use_api=use_api
         )
         g2_winner, g2_user_prompt, g2_judgment, prompt2 = run_judge_pair(
-            question, answer_2, answer_1, judge, ref_answer, multi_turn=multi_turn
+            question, answer_2, answer_1, judge, ref_answer, multi_turn=multi_turn, use_api=use_api
         )
 
         g1_map = {"A": "model_1", "B": "model_2"}
@@ -425,7 +429,18 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 def chat_compeletion_tgwApi(model, conv, temperature, max_tokens):
-    URI = f'http://127.0.0.1:5000/api/v1/chat'
+    def read_json(file_path):
+        f = open(file_path)
+        data = json.load(f)
+        f.close()
+        return data
+
+    # this is ugly. i know
+    request=read_json("tgw_request_template.json")
+    URI = request["URI"]
+    del request["URI"]
+
+    request["max_new_tokens"]=max_tokens
 
     for _ in range(API_MAX_RETRY):
         try:
@@ -439,72 +454,13 @@ def chat_compeletion_tgwApi(model, conv, temperature, max_tokens):
             else:
                 print(conv.messages)
                 input(f"len conv messages != !! {len(conv.messages)}")
-            # print("chat_compeletion_tgwApi")
-            # print(prompt)
 
-            request = {
-                'user_input': prompt,
-                'max_new_tokens': max_tokens,
-                'auto_max_new_tokens': False,
-                # 'history': [],
-                'mode': 'instruct',  # Valid options: 'chat', 'chat-instruct', 'instruct'
-                'character': 'Example',
-                'instruction_template': 'Orca Mini',  # Will get autodetected if unset
-                # 'your_name': 'You',
-                # 'name1': 'name of user', # Optional
-                # 'name2': 'name of character', # Optional
-                # 'context': 'character context', # Optional
-                # 'greeting': 'greeting', # Optional
-                # 'name1_instruct': 'You', # Optional
-                # 'name2_instruct': 'Assistant', # Optional
-                # 'context_instruct': 'context_instruct', # Optional
-                # 'turn_template': 'turn_template', # Optional
-                'regenerate': False,
-                '_continue': False,
-                'stop_at_newline': False,
-                'chat_generation_attempts': 1,
-                # 'chat-instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
-
-                # Generation params. If 'preset' is set to different than 'None', the values
-                # in presets/preset-name.yaml are used instead of the individual numbers.
-                'preset': 'None',
-                'do_sample': True,
-                'temperature': 0.1,
-                'top_p': 0.1,
-                'typical_p': 1,
-                'epsilon_cutoff': 0,  # In units of 1e-4
-                'eta_cutoff': 0,  # In units of 1e-4
-                'tfs': 1,
-                'top_a': 0,
-                'repetition_penalty': 1.18,
-                'repetition_penalty_range': 0,
-                'top_k': 40,
-                'min_length': 0,
-                'no_repeat_ngram_size': 0,
-                'num_beams': 1,
-                'penalty_alpha': 0,
-                'length_penalty': 1,
-                'early_stopping': False,
-                'mirostat_mode': 0,
-                'mirostat_tau': 5,
-                'mirostat_eta': 0.1,
-
-                'seed': -1,
-                'add_bos_token': True,
-                'truncation_length': 4096,
-                'ban_eos_token': False,
-                'skip_special_tokens': True,
-                'stopping_strings': []
-            }
+            request["user_input"]=prompt
 
             response = requests.post(URI, json=request)
 
             if response.status_code == 200:
                 result = response.json()['results'][0]['history']
-            #     print(json.dumps(result, indent=4))
-            #     print()
-            #     print(result['visible'][-1][1])
-            # print(result)
 
             output=result['visible'][-1][1]
             # print("------------------------")

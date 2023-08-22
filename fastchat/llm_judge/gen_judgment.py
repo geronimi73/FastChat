@@ -3,8 +3,6 @@ Usage:
 python gen_judgment.py --model-list [LIST-OF-MODEL-ID] --parallel [num-concurrent-api-call] --mode [single|pairwise-baseline|pairwise-all]
 """
 import sys
-sys.path.append("/home/g/ft-eval/FastChat")
-
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
@@ -183,6 +181,7 @@ if __name__ == "__main__":
         default="data/judge_prompts.jsonl",
         help="The file of judge prompts.",
     )
+    parser.add_argument("--use-api", type=bool, default=False)
     parser.add_argument("--judge-model", type=str, default="gpt-4")
     parser.add_argument("--baseline-model", type=str, default="gpt-3.5-turbo")
     parser.add_argument(
@@ -309,11 +308,11 @@ if __name__ == "__main__":
     # Play matches
     if args.parallel == 1:
         for match in tqdm(matches):
-            play_a_match_func(match, output_file=output_file)
+            play_a_match_func(match, output_file=output_file, use_api=args.use_api)
     else:
 
         def play_a_match_wrapper(match):
-            play_a_match_func(match, output_file=output_file)
+            play_a_match_func(match, output_file=output_file, use_api=args.use_api)
 
         np.random.seed(0)
         np.random.shuffle(matches)
