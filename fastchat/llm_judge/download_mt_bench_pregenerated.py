@@ -3,8 +3,6 @@ Download the pre-generated model answers and judgments for MT-bench.
 """
 
 import sys
-sys.path.append("/Users/geraldstampfel/Desktop/testbed/FastChat/")
-
 import os
 
 from fastchat.utils import run_cmd

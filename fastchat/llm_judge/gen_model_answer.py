@@ -4,8 +4,6 @@ Usage:
 python3 gen_model_answer.py --model-path lmsys/fastchat-t5-3b-v1.0 --model-id fastchat-t5-3b-v1.0
 """
 import sys
-sys.path.append("/home/g/ft-eval/FastChat")
-
 import argparse
 import json
 import os
