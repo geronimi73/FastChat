@@ -167,9 +167,7 @@ cp gpt-4.jsonl upstage_Llama-2-70b-instruct-v2.jsonl
 ```bash
 cd FastChat/fastchat/llm_judge
 
-models="gpt-4 vicuna-13b-v1.2 claude-v1 llama-13b gpt-3.5-turbo alpaca-13b"
-
-python3 gen_judgment.py --mode pairwise-all --model-list $models --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2
+python3 gen_judgment.py --mode pairwise-all --model-list gpt-4 vicuna-13b-v1.2 claude-v1 llama-13b gpt-3.5-turbo alpaca-13b --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2
 ```
 
 #### Guanaco checkpoints against GPT-3.5 analysis (Figure 3)
@@ -177,15 +175,5 @@ python3 gen_judgment.py --mode pairwise-all --model-list $models --parallel 1 --
 ```bash
 cd FastChat/fastchat/llm_judge
 
-models="alpaca-13b \
-gpt-4 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-500 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-1000 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-1500 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-2000 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-2500 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3000 \
-llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3500"
-
-python3 gen_judgment.py --mode pairwise-baseline --model-list $models --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2
+python3 gen_judgment.py --mode pairwise-baseline --parallel 1 --use-api True --judge-model upstage_Llama-2-70b-instruct-v2 --model-list alpaca-13b gpt-4 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-500 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-1000 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-1500 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-2000 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-2500 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3000 llama-2-7b-guanaco-2023-08-04_misunderstood-lion-checkpoint-3500
 ```
