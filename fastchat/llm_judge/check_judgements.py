@@ -140,7 +140,7 @@ def fix_judgements(judgements):
     return judgements, changes
 
 def prepare_for_mtbench_agreement(judgements):
-    jcopy=deepcopy(judgements)
+    jcopy = [x for x in judgements if not "error" in x["g1_winner"] and not "error" in x["g2_winner"] ]
 
     for judgement in jcopy:
         judgement["model_a"]=judgement["model_1"]
@@ -148,6 +148,8 @@ def prepare_for_mtbench_agreement(judgements):
         judgement["judge"]=judgement["judge"][0]
 
         if judgement["g1_winner"] == "error" or judgement["g2_winner"] == "error":
+            # jcopy.remove(judgement)
+            # continue
             judgement["winner"]="tie (gt-0-errors)"
         elif judgement["g1_winner"] == "Tie" and judgement["g2_winner"] == "Tie":
             judgement["winner"]="tie"
