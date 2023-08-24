@@ -8,7 +8,7 @@ FastChat is an open platform for training, serving, and evaluating large languag
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
 # Purpose of this fork
-
+Reproduce the data in https://medium.com/@geronimo7/judging-the-judges-668e80f4a1f2
 
 
 ## Figure 1: Agreement of judges GPT-4 and llama 2 with human evaluation
